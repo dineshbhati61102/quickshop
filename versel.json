@@ -1,7 +1,7 @@
 {
 
 "version": 2,
-"name": "quick-shop",
+"name": "quickshop-api",
 "builds":[
 { "src": "app.js", "use": "@vercel/node"}
 ],
