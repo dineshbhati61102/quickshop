@@ -4,18 +4,19 @@ const Router = express.Router()
 const nodemailer = require('nodemailer');
 const path = require('path');
 const fs = require('fs');
+const [verifyToken, verifyTokenAdmin] = require('../verification');
 
 let transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 587,
     secure: false, // true for 465, false for other ports
     auth: {
-      user: "dineshbhati7834@gmail.com", // generated ethereal user
-      pass: "xlzsywsqfskgdmvt" // generated ethereal password
+      user: process.env.MAIL_SENDER, // generated ethereal user
+      pass: process.env.MAIL_SENDER_PASS // generated ethereal password
     },
   });
 
-Router.get("/", async(req,res)=>{
+Router.get("/", verifyTokenAdmin, async(req,res)=>{
     try {
         const Data = await Contact.find().sort({_id:-1})
         if (Data) {
@@ -31,7 +32,7 @@ Router.get("/", async(req,res)=>{
 
 
 
-Router.get("/:_id", async(req,res)=>{
+Router.get("/:_id", verifyTokenAdmin, async(req,res)=>{
     try {
         const Data = await Contact.find({_id:req.params._id})
         if (Data) {
@@ -55,7 +56,7 @@ Router.post("/", async (req, res) => {
         res.status(201).send({ result: "Done", message: "Contact is Created", data:Data })
             try {
             let mailOptions = {
-                from: 'dineshbhati7834@gmail.com',
+                from: process.env.MAIL_SENDER,
                 to: req.body.email, 
                 subject: "Your Query Recieved", 
                 text: "Thank you For Share Your Query, Our Team Will Contact You Soon", 
@@ -66,8 +67,8 @@ Router.post("/", async (req, res) => {
                 }
               })
               let mailOptions2 = {
-                from: 'dineshbhati7834@gmail.com', 
-                to: 'dineshbhati7834@gmail.com', 
+                from: process.env.MAIL_SENDER, 
+                to: process.env.MAIL_SENDER, 
                 subject: req.body.subject, 
                 text:  req.body.message, 
               }
@@ -102,7 +103,30 @@ Router.post("/", async (req, res) => {
 })
 
 
-Router.delete("/delete/:_id", async(req,res)=>{
+
+
+Router.put("/update/:_id", verifyTokenAdmin, async(req,res)=>{
+    try {
+        const Data = await Contact.findOne({_id:req.params._id})
+        if (Data) {
+            Data.name = req.body.name  ??  Data.name
+            Data.email = req.body.email  ??  Data.email
+            Data.subject = req.body.subject  ??  Data.subject
+            Data.phone = req.body.phone  ??  Data.phone
+            Data.message = req.body.subject  ??  Data.subject
+            
+            await Data.save()
+            res.status(200).send({result:"Done", message:"Contact is Updated"})
+        }else{
+            res.status(404).send({result:"Failed", message:"404 Not Found"})
+        }       
+    } catch (error) {
+        res.status(500).send({ result: "Failed", message: "Internal Server Error"})
+        console.log(error);
+    }
+})
+
+Router.delete("/delete/:_id", verifyTokenAdmin, async(req,res)=>{
       try {
          await Contact.deleteOne({_id:req.params._id})   
         res.status(200).send({ result: "Done", message: "Contact is Deleted"}) 
@@ -111,29 +135,6 @@ Router.delete("/delete/:_id", async(req,res)=>{
         console.log(error);
       }
 })
-
-
-Router.put("/update/:_id", async(req,res)=>{
-     try {
-         const Data = await Contact.findOne({_id:req.params._id})
-         if (Data) {
-            Data.name = req.body.name  ??  Data.name
-            Data.email = req.body.email  ??  Data.email
-            Data.subject = req.body.subject  ??  Data.subject
-            Data.phone = req.body.phone  ??  Data.phone
-            Data.message = req.body.subject  ??  Data.subject
-
-            await Data.save()
-            res.status(200).send({result:"Done", message:"Contact is Updated"})
-         }else{
-            res.status(404).send({result:"Failed", message:"404 Not Found"})
-         }       
-     } catch (error) {
-        res.status(500).send({ result: "Failed", message: "Internal Server Error"})
-        console.log(error);
-     }
-})
-
 
 
 module.exports = Router

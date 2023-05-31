@@ -1,8 +1,10 @@
 const express = require("express")
 const Wishlist = require("../model/Wishlist")
+const [verifyToken, verifyTokenAdmin] = require('../verification');
+
 const Router = express.Router()
 
-Router.post("/",async(req,res)=>{
+Router.post("/", verifyToken, async(req,res)=>{
     try{
         const Data = new Wishlist(req.body)
         await Data.save()
@@ -26,7 +28,7 @@ Router.post("/",async(req,res)=>{
     }
 })
 
-Router.get("/:userId",async(req,res)=>{
+Router.get("/:userId", verifyToken, async(req,res)=>{
     try{
         const Data = await Wishlist.find({userId:req.params.userId}).sort({name:1})
             res.send({result:"Done",total:Data.length,data:Data})
@@ -37,7 +39,7 @@ Router.get("/:userId",async(req,res)=>{
     }
 })
 
-Router.delete("/:_id",async(req,res)=>{
+Router.delete("/:_id", verifyToken, async(req,res)=>{
     try{
         await Wishlist.deleteOne({_id:req.params._id})
         res.send({result:"Done",message:"Record is Deleted!!!"})            

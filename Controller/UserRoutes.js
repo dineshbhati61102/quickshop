@@ -7,15 +7,16 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const nodemailer = require('nodemailer');
-
 const schema = new passwordValidator();
+const [verifyToken, verifyTokenAdmin] = require('../verification');
+
 
 schema
     .is().min(8)                                    // Minimum length 8
     .is().max(30)                                   // Maximum length 30
-    .has().uppercase()                              // Must have uppercase letters
+    .has().uppercase(1)                              // Must have uppercase letters
     .has().lowercase()                              // Must have lowercase letters
-    .has().digits(3)                                // Must have at least 3 digits
+    .has().digits(1)                                // Must have at least 1 digits
     .has().not().spaces()                           // Should not have spaces
     .is().not().oneOf(['Admin@123', 'User@123']);   // Blacklist these values
 
@@ -39,14 +40,15 @@ let transporter = nodemailer.createTransport({
     port: 587,
     secure: false, // true for 465, false for other ports
     auth: {
-      user: "dineshbhati7834@gmail.com", // generated ethereal user
-      pass: "xlzsywsqfskgdmvt", // generated ethereal password
+      user: process.env.MAIL_SENDER, // generated ethereal user
+      pass: process.env.MAIL_SENDER_PASS, // generated ethereal password
     },
   });
 
 
 
-Router.get("/", async (req, res) => {
+
+Router.get("/", verifyTokenAdmin, async (req, res) => {
     try {
         const Data = await User.find().sort({ _id: -1 })
         if (Data) {
@@ -61,11 +63,10 @@ Router.get("/", async (req, res) => {
 
 });
 
-Router.get("/:_id", async (req, res) => {
+Router.get("/:_id", verifyToken, async (req, res) => {
     try {
         const Data = await User.find({ _id: req.params._id })
         if (Data) {
-            console.log(Data);
             res.status(200).send({ result: "Done", message: "Single User", data: Data })
         } else {
             res.status(404).send({ result: "Failed", message: "!! 404 Not Found !!" })
@@ -77,6 +78,20 @@ Router.get("/:_id", async (req, res) => {
     }
 
 });
+
+
+Router.get("/admin/:_id", verifyTokenAdmin, async (req, res) => {
+    try {
+        const Data = await User.findOne({ _id: req.params._id })
+        if (Data)
+            res.status(200).send({ result: "Done", data: Data })
+        else
+            res.status(404).send({ result: "Failed", message: "No Record Found" })
+    }
+    catch (error) {
+        res.status(500).send({ result: "Failed", message: "Internal Server Error" })
+    }
+})
 
 Router.post("/signup",async (req, res) => {
     const email = await User.findOne({email:req.body.email})
@@ -106,14 +121,14 @@ Router.post("/signup",async (req, res) => {
             })
         } else { res.status(400).send({ result: "Failed", message: "Password are Not Matched" }) }
     } else {
-        res.status(400).send({ result: "Failed", message: "Invalid Password!!! Password Length Must Be on Minimum 8 and Maximum 100 also include 1 upper case character, 1 lower case character and not include any space" })
+        res.status(400).send({ result: "Failed", message: "Invalid Password!!! Password Length Must Be on Minimum 8 and Maximum 100 also include 1 upper case character, 1 lower case character and not include any space, And These Passwords 'Admin@123', 'User@123' are not Allowed" })
     }
 }else{ res.status(400).send({ result: "Failed", message: "Email Or Username already exists" }) }
 
 });
 
 
-Router.put("/update-user/:_id", upload.single("pic"), async(req,res)=>{
+Router.put("/update-user/:_id", verifyToken, upload.single("pic"), async(req,res)=>{
     try {
         const Data = await User.findOne({_id:req.params._id})
         if (Data) {
@@ -138,10 +153,11 @@ Router.put("/update-user/:_id", upload.single("pic"), async(req,res)=>{
 
             if (req.file) {
                 Data.pic = req.file.filename
+            }
                 await Data.save()
                 res.status(200).send({ result: "Done", message: "Record is Updated" })
     
-            }
+            
            
         }else{
         res.status(404).send({ result: "Failed", message: "No Record Found" })
@@ -151,7 +167,7 @@ Router.put("/update-user/:_id", upload.single("pic"), async(req,res)=>{
         if (error.keyValue){
         res.status(400).send({ result: "Failed", message: "Name Must Be Unique" })
         }else{
-            res.status(500).send({ result: "Fail", message: "Internal Server Error" })
+            res.status(500).send({ result: "Failed", message: "Internal Server Error" })
             console.log(error);
         }
     }
@@ -159,7 +175,7 @@ Router.put("/update-user/:_id", upload.single("pic"), async(req,res)=>{
 })
 
 
-Router.put("/update-admin/:_id", upload.single("pic"), async(req,res)=>{
+Router.put("/update-admin/:_id", verifyTokenAdmin, upload.single("pic"), async(req,res)=>{
     try {
         const Data = await User.findOne({_id:req.params._id})
         if (Data) {
@@ -184,10 +200,11 @@ Router.put("/update-admin/:_id", upload.single("pic"), async(req,res)=>{
 
             if (req.file) {
                 Data.pic = req.file.filename
-                await Data.save()
+            }
+                
+            await Data.save()
                 res.status(200).send({ result: "Done", message: "Record is Updated" })
     
-            }
            
         }else{
         res.status(404).send({ result: "Failed", message: "No Record Found" })
@@ -197,7 +214,7 @@ Router.put("/update-admin/:_id", upload.single("pic"), async(req,res)=>{
         if (error.keyValue){
         res.status(400).send({ result: "Failed", message: "Name Must Be Unique" })
         }else{
-            res.status(500).send({ result: "Fail", message: "Internal Server Error" })
+            res.status(500).send({ result: "Failed", message: "Internal Server Error" })
             console.log(error);
         }
     }
@@ -221,7 +238,7 @@ Router.post("/login", async (req, res) => {
                                 res.status(500).send({ result: "Failed", message: "Internal Server Error while Generating Token" })
                                 console.log(err);
                             }else{
-                                res.status(200).send({ result: "Done", message: "You Have Successfully Login", data:Data, token: token })
+                                res.status(200).send({ result: "Done", message: "You Have Successfully Login", data:Data, token, token  })
                             }
                         })
                     }else{
@@ -230,7 +247,8 @@ Router.post("/login", async (req, res) => {
                             res.status(500).send({ result: "Failed", message: "Internal Server Error while Generating Token" })
                             console.log(err);
                         }else{
-                            res.status(200).send({ result: "Done", message: "You Have Successfully Login", data:Data, token: token })
+                            res.status(200).send({ result: "Done", message: "You Have Successfully Login", data:Data, token, token })
+                    
                         }
                     })
                 }
@@ -251,7 +269,7 @@ Router.post("/login", async (req, res) => {
 
 
 
-Router.delete("/:_id", async (req, res) => {
+Router.delete("/:_id", verifyTokenAdmin, async (req, res) => {
     try {
         const Data = await User.findOne({ _id: req.params._id })
         if (Data) {
@@ -280,19 +298,21 @@ Router.post("/reset-password", async(req,res)=>{
          const otp = Math.floor(100000 + Math.random() * 900000);
          Data.otp = otp
   let mailOption = {
-    from: "dineshbhati7834@gmail.com", 
+    from: process.env.MAIL_SENDER, 
     to: Data.email,
     subject: "OTP For PASSWORD RESET : Team Developer",
-    text: `OTP for Password Reset is ${otp}\nTeam Eshop\n` , 
+    text: `OTP for Password Reset is ${otp}\nTeam Eshopper\n` , 
   }
    transporter.sendMail(mailOption,async (err,result)=>{
     if (err) {
         console.log(err);
+        res.status(500).send({result:"Failed", message: err})
     }else{
         res.status(200).send({result:"Done", message:"Otp Sent On Registered Email ID"})
         await Data.save()
     }
    })
+
      }else{
         res.status(401).send({result:"Failed", message:"Invalid Username"})
      }
@@ -328,6 +348,7 @@ Router.post("/new-password", async(req,res)=>{
         const Data = await User.findOne({username:req.body.username})
         if (Data) {
             if (schema.validate(req.body.password)) {
+          if (req.body.password === req.body.cpassword) {
               bcrypt.hash(req.body.password, 10, async(err,hash)=>{
                  if (err) {
                     res.status(500).send({ result: "Failed", message: "Internal Server Error while Creating Hash Password" })
@@ -339,6 +360,7 @@ Router.post("/new-password", async(req,res)=>{
 
                  }
               })
+            }else{ res.status(400).send({ result: "Failed", message: "Password Are Not Matching" })}
                 
             }else{
         res.status(400).send({ result: "Failed", message: "Invalid Password!!! Password Length Must Be on Minimum 8 and Maximum 100 also include 1 upper case character, 1 lower case character and not include any space" })

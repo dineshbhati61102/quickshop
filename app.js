@@ -5,8 +5,8 @@ const dotenv = require('dotenv');
 dotenv.config()
 require("./db/connection")
 const cors = require('cors');
-app.use(express.json())
 app.use(cors())
+app.use(express.json())
 
 app.use("/public", express.static("public"))
 app.use(express.static(path.join(__dirname,"build")))
@@ -21,8 +21,7 @@ const NewsletterRoutes = require("./Controller/NewsletterRoutes")
 const SubcategoryRoutes = require("./Controller/SubcategoryRoutes")
 const WishlistRoutes = require("./Controller/WishlistRoutes")
 const CheckoutRoutes = require("./Controller/CheckoutRoutes")
-
-
+const PaymentRoutes = require("./Controller/PaymentRoutes")
 
 
 
@@ -37,6 +36,7 @@ app.use("/newsletter/", NewsletterRoutes)
 app.use("/subcategory/", SubcategoryRoutes)
 app.use("/wishlist/", WishlistRoutes)
 app.use("/checkout/", CheckoutRoutes)
+app.use("/payment/", PaymentRoutes)
 
 
 

@@ -2,6 +2,7 @@ const express = require("express")
 const Newsletter = require("../model/Newsletter")
 const Router = express.Router()
 const nodemailer = require('nodemailer');
+const [verifyToken, verifyTokenAdmin] = require('../verification');
 
 
 let transporter = nodemailer.createTransport({
@@ -9,8 +10,8 @@ let transporter = nodemailer.createTransport({
     port: 587,
     secure: false, // true for 465, false for other ports
     auth: {
-      user: "dineshbhati7834@gmail.com", // generated ethereal user
-      pass: "xlzsywsqfskgdmvt" // generated ethereal password
+      user: process.env.MAIL_SENDER, // generated ethereal user
+      pass: process.env.MAIL_SENDER_PASS // generated ethereal password
     },
   });
 
@@ -18,10 +19,10 @@ Router.post("/",async(req,res)=>{
     try{
         const Data = new Newsletter(req.body)
         await Data.save()
-        res.send({result:"Done",message:"Record is Created!!!",data:Data})
+        res.send({result:"Done", message:"You Are Now Our Subscriber",data:Data})
 
         let mailOptions = {
-            from: 'dineshbhati7834@gmail.com',
+            from: process.env.MAIL_SENDER,
             to: req.body.email, 
             subject: "Subscribed", 
             text: "Thank you For Subscribe Us, We Will Update Soon", 
@@ -44,7 +45,7 @@ Router.post("/",async(req,res)=>{
     }
 })
 
-Router.get("/",async(req,res)=>{
+Router.get("/", verifyTokenAdmin, async(req,res)=>{
     try{
         const Data = await Newsletter.find().sort({_id:-1})
         res.send({result:"Done",total:Data.length,data:Data})
@@ -54,7 +55,7 @@ Router.get("/",async(req,res)=>{
     }
 })
 
-Router.delete("/:_id",async(req,res)=>{
+Router.delete("/:_id", verifyTokenAdmin, async(req,res)=>{
     try{
         await Newsletter.deleteOne({_id:req.params._id})
         res.send({result:"Done",message:"Record is Deleted!!!"})            

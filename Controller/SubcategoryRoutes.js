@@ -1,8 +1,9 @@
 const express = require("express")
 const Subcategory = require("../model/Subcategory")
 const Router = express.Router()
+const [verifyToken, verifyTokenAdmin] = require('../verification');
 
-Router.post("/",async(req,res)=>{
+Router.post("/", verifyTokenAdmin, async(req,res)=>{
     try{
         const Data = new Subcategory(req.body)
         await Data.save()
@@ -40,7 +41,7 @@ Router.get("/:_id",async(req,res)=>{
         res.status(500).send({result:"Fail",message:"Internal Server Error"})
     }
 })
-Router.put("/:_id",async(req,res)=>{
+Router.put("/:_id", verifyTokenAdmin, async(req,res)=>{
     try{
         const Data = await Subcategory.findOne({_id:req.params._id})
         if(Data){
@@ -59,7 +60,7 @@ Router.put("/:_id",async(req,res)=>{
         res.status(500).send({result:"Fail",message:"Internal Server Error"})
     }
 })
-Router.delete("/:_id",async(req,res)=>{
+Router.delete("/:_id", verifyTokenAdmin, async(req,res)=>{
     try{
         await Subcategory.deleteOne({_id:req.params._id})
         res.send({result:"Done",message:"Record is Deleted!!!"})            

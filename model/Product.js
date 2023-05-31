@@ -4,26 +4,32 @@ const mongoose = require('mongoose');
 const ProductSchema = new mongoose.Schema({
     name:{
         type:String,
+          trim : true,
         required:[true,"Name Must Required!!!"]
     },
     maincategory:{
         type:String,
+          trim : true,
         required:[true,"Maincategory Must Required!!!"]
     },
     subcategory:{
         type:String,
+          trim : true,
         required:[true,"Subcategory Must Required!!!"]
     },
     brand:{
         type:String,
+          trim : true,
         required:[true,"Brand Must Required!!!"]
     },
     size:{
         type:String,
+          trim : true,
         required:[true,"Size Must Required!!!"]
     },
     color:{
         type:String,
+          trim : true,
         required:[true,"Color Must Required!!!"]
     },
     baseprice:{
@@ -43,6 +49,7 @@ const ProductSchema = new mongoose.Schema({
     },
     description:{
         type:String,
+          trim : true,
         default:"This is Sample Products"
     },
     pic1:{
@@ -67,6 +74,14 @@ const ProductSchema = new mongoose.Schema({
     }
 
 })
+
+
+ProductSchema.pre('save', function(next) {
+    this.name = this.name.replace(/\s+/g, ' ').trim(); // Replace multiple whitespaces with a single space and trim leading/trailing whitespace
+    next();
+  });
+
+
 
 const Product =  new mongoose.model("Product",ProductSchema)
 

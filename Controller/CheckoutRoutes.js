@@ -1,15 +1,12 @@
 const express = require("express")
 const Checkout = require("../model/Checkout")
-const User = require("../model/User")
-
 const Router = express.Router()
+const [verifyToken, verifyTokenAdmin] = require('../verification');
 
-
-Router.post("/",async(req,res)=>{
+Router.post("/", verifyToken, async(req,res)=>{
     try{
         const Data = new Checkout(req.body)
         Data.date = new Date()
-        console.log(Data.date);
         await Data.save()
         res.send({result:"Done",message:"Record is Created!!!",data:Data})
     }
@@ -24,11 +21,11 @@ Router.post("/",async(req,res)=>{
         res.status(400).send({result:"Failed",message:error.errors.finalAmount.message})
         else
         res.status(500).send({result:"Failed",message:"Internal Server Error"})
+        console.log(error);
     }
 })
 
-
-Router.get("/",async(req,res)=>{
+Router.get("/", verifyTokenAdmin, async(req,res)=>{
     try{
         const Data = await Checkout.find().sort({_id:-1})
         res.send({result:"Done",total:Data.length,data:Data})
@@ -37,7 +34,7 @@ Router.get("/",async(req,res)=>{
         res.status(500).send({result:"Failed",message:"Internal Server Error"})
     }
 })
-Router.get("/user/:userId",async(req,res)=>{
+Router.get("/user/:userId", verifyToken, async(req,res)=>{
     try{
         const Data = await Checkout.find({userId:req.params.userId}).sort({_id:-1})
         res.send({result:"Done",total:Data.length,data:Data})
@@ -47,7 +44,7 @@ Router.get("/user/:userId",async(req,res)=>{
     }
 })
 
-Router.get("/:_id",async(req,res)=>{
+Router.get("/:_id", verifyTokenAdmin, async(req,res)=>{
     try{
         const Data = await Checkout.findOne({_id:req.params._id})
         if(Data)
@@ -59,7 +56,7 @@ Router.get("/:_id",async(req,res)=>{
         res.status(500).send({result:"Failed",message:"Internal Server Error"})
     }
 })
-Router.put("/:_id",async(req,res)=>{
+Router.put("/:_id", verifyTokenAdmin, async(req,res)=>{
     try{
         const Data = await Checkout.findOne({_id:req.params._id})
         if(Data){
@@ -80,7 +77,7 @@ Router.put("/:_id",async(req,res)=>{
         res.status(500).send({result:"Failed",message:"Internal Server Error"})
     }
 })
-Router.delete("/:_id",async(req,res)=>{
+Router.delete("/:_id", verifyTokenAdmin, async(req,res)=>{
     try{
         await Checkout.deleteOne({_id:req.params._id})
         res.send({result:"Done",message:"Record is Deleted!!!"})            

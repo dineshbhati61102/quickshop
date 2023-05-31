@@ -1,9 +1,8 @@
 const express = require('express');
-const Router = express.Router()
 const Product = require('../model/Product');
 const multer = require('multer');
 const fs = require('fs');
-
+const [verifyToken, verifyTokenAdmin] = require('../verification');
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -15,7 +14,7 @@ const storage = multer.diskStorage({
 })
 
 const upload = multer({ storage: storage })
-
+const Router = express.Router()
 
 Router.get("/", async (req, res) => {
     try {
@@ -23,7 +22,7 @@ Router.get("/", async (req, res) => {
         res.send({ result: "Done", total: Data.length, data: Data })
     }
     catch (error) {
-        res.status(500).send({ result: "Fail", message: "Internal Server Error" })
+        res.status(500).send({ result: "Failed", message: "Internal Server Error" })
     }
 })
 
@@ -36,14 +35,14 @@ Router.get("/:_id", async (req, res) => {
         if (Data)
             res.send({ result: "Done", data: Data })
         else
-            res.status(404).send({ result: "Fail", message: "No Record Found" })
+            res.status(404).send({ result: "Failed", message: "No Record Found" })
     }
     catch (error) {
-        res.status(500).send({ result: "Fail", message: "Internal Server Error" })
+        res.status(500).send({ result: "Failed", message: "Internal Server Error" })
     }
 })
 
-Router.post("/", upload.fields([
+Router.post("/", verifyTokenAdmin, upload.fields([
             {name:"pic1", maxCount: 1},
             {name:"pic2", maxCount: 1},
             {name:"pic3", maxCount: 1},
@@ -53,7 +52,6 @@ Router.post("/", upload.fields([
             const Data = new Product(req.body)
     if (Data) {
         Data.finalprice = Math.round(parseInt(req.body.baseprice) - parseInt(req.body.baseprice) * parseInt(req.body.discount) / 100)
-        console.log(Data.finalprice)
         if (req.files && req.files.pic1)
         Data.pic1 = req.files.pic1[0].filename
     if (req.files && req.files.pic2)
@@ -68,37 +66,36 @@ Router.post("/", upload.fields([
   } catch (error) {
             console.log(error);
             if (error.errors.name)
-                res.status(400).send({ result: "Fail", message: error.errors.name.message })
+                res.status(400).send({ result: "Failed", message: error.errors.name.message })
             else if (error.errors.maincategory)
-                res.status(400).send({ result: "Fail", message: error.errors.maincategory.message })
+                res.status(400).send({ result: "Failed", message: error.errors.maincategory.message })
             else if (error.errors.subcategory)
-                res.status(400).send({ result: "Fail", message: error.errors.subcategory.message })
+                res.status(400).send({ result: "Failed", message: error.errors.subcategory.message })
             else if (error.errors.brand)
-                res.status(400).send({ result: "Fail", message: error.errors.brand.message })
+                res.status(400).send({ result: "Failed", message: error.errors.brand.message })
             else if (error.errors.size)
-                res.status(400).send({ result: "Fail", message: error.errors.size.message })
+                res.status(400).send({ result: "Failed", message: error.errors.size.message })
             else if (error.errors.color)
-                res.status(400).send({ result: "Fail", message: error.errors.color.message })
+                res.status(400).send({ result: "Failed", message: error.errors.color.message })
             else if (error.errors.baseprice)
-                res.status(400).send({ result: "Fail", message: error.errors.baseprice.message })
+                res.status(400).send({ result: "Failed", message: error.errors.baseprice.message })
             else
-                res.status(500).send({ result: "Fail", message: "Internal Server Error" })
+                res.status(500).send({ result: "Failed", message: "Internal Server Error" })
         
         }
     
 })
 
 
-Router.put("/update/:_id", upload.fields([
+Router.put("/update/:_id", verifyTokenAdmin, upload.fields([
     {name:"pic1", maxCount: 1},
     {name:"pic2", maxCount: 1},
     {name:"pic3", maxCount: 1},
     {name:"pic4", maxCount: 1}
 ]), async(req,res)=>{
 try {
-    const Data = new Product(req.body)
+    const Data = await Product.findOne({_id:req.params._id})
 if (Data) {
-
             Data.name = req.body.name ?? Data.name
             Data.maincategory = req.body.maincategory ?? Data.maincategory
             Data.subcategory = req.body.subcategory ?? Data.subcategory
@@ -147,19 +144,19 @@ if (Data) {
             res.send({ result: "Done", message: "Record is Updated!!!" })
         }
         else
-            res.status(404).send({ result: "Fail", message: "No Record Found" })
+            res.status(404).send({ result: "Failed", message: "No Record Found" })
 
 }catch (error) {
     if (error.keyValue)
-        res.status(400).send({ result: "Fail", message: "Name Must Be Unique" })
+        res.status(400).send({ result: "Failed", message: "Name Must Be Unique" })
     else
-        res.status(500).send({ result: "Fail", message: "Internal Server Error" })
+        res.status(500).send({ result: "Failed", message: "Internal Server Error" })
 }
 })
 
 
 
-Router.delete("/:_id", async (req, res) => {
+Router.delete("/:_id", verifyTokenAdmin, async (req, res) => {
     try {
         const Data = await Product.findOne({ _id: req.params._id })
         try {
@@ -178,14 +175,14 @@ Router.delete("/:_id", async (req, res) => {
         res.send({ result: "Done", message: "Record is Deleted!!!" })
     }
     catch (error) {
-        res.status(500).send({ result: "Fail", message: "Internal Server Error" })
+        res.status(500).send({ result: "Failed", message: "Internal Server Error" })
     }
 })
 
 Router.post("/search", async(req,res)=>{
     try{
     const Data = await Product.find({
-        $or:[
+        "$or":[
             {name:{$regex:`.*${req.body.search}.*`,$options:"i"}},
             {maincategory:{$regex:`.*${req.body.search}.*`,$options:"i"}},
             {subcategory:{$regex:`.*${req.body.search}.*`,$options:"i"}},
@@ -198,11 +195,10 @@ Router.post("/search", async(req,res)=>{
         res.send({result:"Done",count:Data.length,data:Data})
 
 }catch (error) {
-        res.status(500).send({ result: "Fail", message: "Internal Server Error" })
+        res.status(500).send({ result: "Failed", message: "Internal Server Error" })
         console.log(error);
     }
 })
-
 
 module.exports = Router
 

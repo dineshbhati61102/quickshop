@@ -1,10 +1,9 @@
 const express = require("express")
 const Brand = require("../model/Brand")
-
 const Router = express.Router()
+const [verifyToken, verifyTokenAdmin] = require('../verification');
 
-
-Router.post("/",async(req,res)=>{
+Router.post("/",verifyTokenAdmin,async(req,res)=>{
     try{
         const Data = new Brand(req.body)
         await Data.save()
@@ -20,7 +19,7 @@ Router.post("/",async(req,res)=>{
     }
 })
 
-Router.get("/",async(req,res)=>{
+Router.get("/", async(req,res)=>{
     try{
         const Data = await Brand.find().sort({_id:-1})
         res.send({result:"Done",total:Data.length,data:Data})
@@ -30,7 +29,7 @@ Router.get("/",async(req,res)=>{
     }
 })
 
-Router.get("/:_id",async(req,res)=>{
+Router.get("/:_id",verifyTokenAdmin,async(req,res)=>{
     try{
         const Data = await Brand.findOne({_id:req.params._id})
         if(Data)
@@ -42,7 +41,7 @@ Router.get("/:_id",async(req,res)=>{
         res.status(500).send({result:"Fail",message:"Internal Server Error"})
     }
 })
-Router.put("/:_id",async(req,res)=>{
+Router.put("/:_id", verifyTokenAdmin, async(req,res)=>{
     try{
         const Data = await Brand.findOne({_id:req.params._id})
         if(Data){
@@ -61,7 +60,7 @@ Router.put("/:_id",async(req,res)=>{
         res.status(500).send({result:"Fail",message:"Internal Server Error"})
     }
 })
-Router.delete("/:_id",async(req,res)=>{
+Router.delete("/:_id", verifyTokenAdmin, async(req,res)=>{
     try{
         await Brand.deleteOne({_id:req.params._id})
         res.send({result:"Done",message:"Record is Deleted!!!"})            

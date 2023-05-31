@@ -36,16 +36,20 @@ const CheckoutSchema = new mongoose.Schema({
     products:[
         {
             productId:{
-                type:String
+                type:String,
+                  trim : true
             },
             name:{
-                type:String
+                type:String,
+                  trim : true
             },
             color:{
-                type:String
+                type:String,
+                  trim : true
             },
             size:{
-                type:String
+                type:String,
+                  trim : true
             },
             price:{
                 type:Number
@@ -62,5 +66,8 @@ const CheckoutSchema = new mongoose.Schema({
         }
     ]
 })
+
+
+
 const Checkout = new mongoose.model("Checkout",CheckoutSchema)
 module.exports = Checkout
