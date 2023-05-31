@@ -1,0 +1,101 @@
+*{padding: 0px;
+ margin: 0px;
+box-sizing: border-box;}
+
+#side_nav{
+    background-color: aqua;
+}
+.empty1{float: left;}
+
+.showHidePass{
+   float: right;
+   margin-top: -30px;
+   padding: 0px 10px;
+}
+
+
+@media (max-width: 992px){
+   .admin_home{
+     margin-left: 0px;
+   }
+
+}
+
+
+@media (max-width: 768px){
+ .table-responsive{
+    margin-left: 40px;
+ }
+ .admin_home{
+   margin-top: 40px;
+   margin-left: 80px;
+ }
+
+ .admin_img{
+   width: 300px;
+   margin-left: 80px;
+ }
+
+ .product_img{
+   height: 450px!important;
+ }
+ .cart_section{
+   width: 100%;
+ }
+}
+
+
+  @media (max-width: 576px){
+ 
+   .user_home .row div:first-child{
+    width: 30%;
+  }
+
+  .user_home .row div{
+    width: 70%;
+  }
+
+  .user_img{
+    width: 300px;
+    margin-left: 70px;
+  }
+
+.user_home{margin-left: 0px!important;
+margin-top: 20px;}
+
+   .update_btn{ margin-top: 20px;
+      width: 100%!important;
+   }
+   .update_btn .btn{
+      width: 100%;
+   }
+   
+
+
+
+  .admin_home .row div:first-child{
+    width: 40%;
+  }
+
+  .admin_home .row div{
+    width: 60%;
+  }
+
+  .admin_img{
+    width: 300px;
+    margin-left: 70px;
+  }
+
+  .admin_home{margin-left: 0px;}
+
+  .checkout_data>div{
+    width: 40%;
+  }
+
+  .checkout_btn{
+    padding: 10px!important;
+  }
+
+}
+
+
